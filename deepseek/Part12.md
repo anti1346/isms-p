@@ -1,0 +1,1326 @@
+## 3. 디렉터리 인덱싱
+
+### DI (상) 디렉터리 인덱싱
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 웹 애플리케이션 서버 내 디렉터리 인덱싱 취약점 존재 여부 점검 |
+| 점검 목적 | 디렉터리 인덱싱 취약점을 제거하여 특정 디렉터리 내 불필요한 파일 정보의 노출 및 비인가자가 민감한 파일에 대한 접근을 차단 |
+| 보안 위험 | 해당 취약점이 존재할 경우, 브라우저를 통해 특정 디렉터리 내 파일 리스트가 노출되어 응용 시스템의 구조가 외부에 공개될 수 있으며, 민감한 정보가 포함된 설정 파일 등이 노출될 경우 보안상 심각한 위험을 초래할 수 있음 |
+| 참고 | ※ 디렉터리 인덱싱 취약점: 특정 디렉터리의 초기 페이지(index.html, home.html, default.asp 등) 파일이 존재하지 않을 때 디렉터리 목록을 출력하는 취약점 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 서버 |
+| 판단 기준 | **양호**: 디렉터리 파일 리스트가 노출되지 않는 경우<br>**취약**: 디렉터리 파일 리스트가 노출되는 경우 |
+| 조치 방법 | 웹 애플리케이션 서버 설정을 변경하여 디렉터리 파일 리스트가 노출되지 않도록 설정 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+```
+- 점검 방법
+Step 1) URL 경로 중 확인하고자 하는 디렉터리 경로에 대하여 주소창에 입력하여 인덱싱 여부 확인
+[ 디렉터리 인덱싱 취약점 유무 판단 ]
+```
+
+```
+- 조치 방법
+● Apache
+§ httpd.conf 파일 내 Indexes 옵션 제거 후 서버 재기동
+Apache 서버 설정 예시
+<Directory /var/www/html>
+Options Indexes FollowSymLinks
+# Indexes 옵션 제거
+Options FollowSymLinks
+</Directory>
+
+● Tomcat
+§ web.xml 파일 내 아래 지시자 수정 후 서버 재기동
+Tomcat 서버 설정 예시
+<init-param>
+<param-name>listings</param-name>
+<param-value>false</param-value>
+</init-param>
+
+● IIS (6.0 이하)
+§ 인터넷 정보 서비스 → 등록 정보 → 홈 디렉터리 → 디렉터리 검색 해제
+[ 디렉터리 검색 옵션 해제 설정 ]
+
+● IIS (7.0 이상)
+§ IIS 관리자 → 디렉터리 검색 → 사용 안 함
+[ 디렉터리 검색 기능 사용 안함 설정 ]
+
+● Nginx
+§ /etc/nginx/sites-available/default 등 파일 내 아래 지시자 수정 후 서버 재기동
+Nginx 서버 설정 예시
+...
+server {
+location / {
+autoindex off;
+}
+}
+...
+```
+
+---
+
+## 4. 에러 페이지 적용 미흡
+
+### EP (상) 에러 페이지 적용 미흡
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 웹 애플리케이션 에러 페이지 내 불필요한 정보 노출 여부 점검 |
+| 점검 목적 | 사용자 정의 에러 페이지를 설정하여 기본 서버 에러 페이지 내 불필요한 정보(서버 버전 정보, 시스템 절대 경로, 스택 트레이스 등)의 제공을 차단하기 위함 |
+| 보안 위험 | 에러 페이지 내 서버 및 응용 시스템의 상세한 정보를 포함한 경우, 시스템 구조와 스택 트레이스, 데이터베이스 쿼리 등 민감한 정보를 노출시켜 공격 벡터로 악용될 가능성 존재 |
+| 참고 | ※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 서버, 웹 방화벽 |
+| 판단 기준 | **양호**: 에러 발생 시 자체 정의 에러 페이지를 출력하여 과도한 정보가 노출되지 않는 경우<br>**취약**: 에러 발생 시 기본 에러 페이지가 출력되며, 해당 페이지에 불필요한 정보(서버 버전 정보, 시스템 경로, 스택 트레이스 등)가 노출되는 경우 |
+| 조치 방법 | 웹 애플리케이션 서버 내 사용자 정의 에러 페이지를 적용함으로써 불필요한 정보 노출을 방지 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+```
+- 점검 방법
+Step 1) 에러 유도 시 에러 페이지 내 불필요한 정보(서버 버전 정보, 시스템 절대 경로, 스택 트레이스 등)가 노출되는지 확인
+[ 에러 페이지 내 서버 버전 정보 노출 ]
+```
+
+```
+- 조치 방법
+● Apache
+§ apache2.conf 또는 httpd.conf 파일 내 아래 지시자 추가 후 서버 재기동
+응답 헤더 내 서버 버전 정보 제거 예시
+...
+ServerTokens Prod
+ServerSignature Off
+...
+사용자 에러 페이지 정의 예시
+# 예) ErrorDocument 404 /main/error.html
+ErrorDocument 404 [에러 페이지 경로]
+ErrorDocument 405 [에러 페이지 경로]
+# 추가적으로 에러 코드 등록하여 설정
+...
+
+● Tomcat
+§ server.xml 파일 내 아래 지시자 추가 후 서버 재기동
+응답 헤더 내 서버 버전 정보 제거 예시
+# server.xml 파일 내 <Connector> 요소에 아래 지시자 추가 후 서버 재기동
+<Connector port="8080" protocol="HTTP/1.1"
+connectionTimeout="20000"
+redirectPort="8443"
+maxParameterCount="1000"
+server=" "
+/>
+개발용 리포트 비활성화 예시
+# server.xml 파일 내 아래 지시자 추가 후 서버 재기동
+<Valve className="org.apache.catalina.valves.ErrorReportValve"
+ showReport="false"
+ showServerInfo="false" />
+</Host>
+에러 페이지 매핑 예시
+<!-- web.xml -->
+<error-page>
+ <error-code>404</error-code>
+ <location>/errors/404</location>
+</error-page>
+<error-page>
+ <error-code>500</error-code>
+ <location>/errors/500</location>
+</error-page>
+<!-- 모든 예외(최상위) 공통 500 처리 -->
+<error-page>
+ <exception-type>java.lang.Exception</exception-type>
+ <location>/errors/500</location>
+</error-page>
+
+● Nginx
+§ nginx.conf 파일 내 아래 지시자 추가 후 서버 재기동
+응답 헤더 내 서버 버전 정보 제거 예시
+...
+http {
+server_tokens off;
+...
+}
+...
+§ /etc/nginx/sites-available/default 파일 내 아래 지시자 추가 후 서버 재기동
+사용자 에러 페이지 정의 예시
+server {
+ listen 80;
+ ...
+ # 기타 설정
+ ...
+ error_page 400 401 402 405 /custom_4xx.html;
+ error_page 404 /custom_404.html;
+ error_page 500 502 503 504 /custom_5xx.html;
+ location = /custom_404.html {
+ root /var/www/html;
+ internal;
+ }
+ location = /custom_4xx.html {
+ root /var/www/html;
+ internal;
+ }
+ location = /custom_5xx.html {
+ root /var/www/html;
+ internal;
+ }
+...
+}
+
+● IIS (6.0 이하)
+※ 응답 헤더
+§ Microsoft사의 URLScan 3.1 도구 지원 종료로 인한 서버 버전 제거 제한
+※ 에러 페이지
+§ 인터넷 정보 서비스 → 등록 정보 → 사용자 정의 오류 → 등록 정보 편집 → 별도 에러 페이지 지정
+[ 사용자 정의 에러 페이지 설정 ]
+
+● IIS (7.0 이상)
+※ 응답 헤더
+§ URL Rewrite 모듈 설치 → IIS 관리자 → URL 재작성 → 서버 변수 보기 → 추가 → RESPONSE_SERVER 변수 추가 → 규칙 추가 → 아웃바운드 규칙(빈 규칙) → 규칙 추가 → 적용
+§ URL Rewrite 모듈 (https://www.iis.net/downloads/microsoft/url-rewrite)
+[ 응답 헤더 내 서버 버전 정보 제거 ]
+※ 에러 페이지
+§ IIS 관리자 → 오류 페이지 → 기능 설정 편집 → 사용자 지정 오류 페이지
+[ 사용자 정의 에러 페이지 설정 ]
+```
+
+---
+
+## 5. 정보 누출
+
+### IL (상) 정보 누출
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 웹 애플리케이션 내 중요 정보(개인정보, 금융 정보 등) 및 불필요한 정보(주석 내 디버깅 정보, 초기 샘플페이지, 백업 파일 등)의 노출 여부 점검 |
+| 점검 목적 | 웹 애플리케이션 내 중요 정보(개인정보, 금융 정보 등)에 대해 마스킹 처리를 하고, 서비스 제공 중 불필요한 정보(주석 내 디버깅 정보, 초기 샘플 페이지, 백업 파일 등)를 삭제하여 민감한 정보와 내부 시스템 정보의 노출을 차단하기 위함 |
+| 보안 위험 | 웹 애플리케이션 운영 시 중요 정보(개인정보, 금융 정보 등)가 평문으로 노출될 경우, 개인정보 유출, 신원 도용, 피싱 공격 등의 위협이 발생할 수 있으며, 서버나 WAS의 초기 샘플 페이지, 백업 파일, 압축 파일 등이 노출될 경우, 공격자가 시스템 구조를 파악하고 보안 설정 및 접근 제어 정책을 유출하여 2차 공격에 활용할 수 있음 |
+| 참고 | ※ 중요 정보: 고유식별정보(주민등록번호), 비밀번호(로그인 비밀번호, 계좌 비밀번호, 공인인증서 비밀번호 등), 신용정보(보안카드번호, 카드번호 등) 등<br>※ 중요 정보 노출(일회성 노출)이 반드시 필요한 서비스의 경우 본인인증 절차 적용 시 예외 처리<br>※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 소스코드, 웹 애플리케이션 서버 |
+| 판단 기준 | **양호**: 중요 정보가 마스킹 처리되어 있으며, 서비스 운영 및 서버 사이드의 구조를 파악할 수 있는 불필요한 정보가 노출되지 않는 경우<br>**취약**: 중요 정보가 평문으로 노출되거나, 서비스 운영 및 서버 사이드의 구조를 파악할 수 있는 과도한 정보가 노출되는 경우 |
+| 조치 방법 | 중요 정보를 마스킹 처리하고, 샘플 페이지나 불필요한 정보를 제공하는 요소를 삭제하여 과도한 정보 노출을 최소화함으로써 민감 정보와 내부 시스템 구조의 노출을 방지함 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+**● Apache**
+
+```
+- 점검 방법
+Step 1) 웹 애플리케이션 내 중요 정보(개인정보, 금융정보 등)의 평문 노출 여부 점검
+[ 페이지 내 중요 정보 평문 노출 ]
+
+Step 2) 서버나 WAS의 초기 샘플 페이지, 백업파일 등 불필요한 정보의 노출 유무 점검
+[ 초기 샘플 페이지 내 중요 정보 노출 ]
+
+Step 3) HTML 소스코드 내 중요 정보가 코드 및 주석을 통한 노출 여부 점검
+[ HTML 주석 내 중요 정보 노출 ]
+```
+
+```
+- 조치 방법
+1. robots.txt, web.config, nginx.conf 파일 작성을 통해 검색 차단할 디렉터리, 확장자, 페이지 등을 지정할 수 있으며 HTML 태그 내에 META 태그를 추가하여 검색엔진의 인덱싱을 차단함
+2. 웹 디렉터리 내 삭제해야 할 파일 태그 확장자에 포함된 백업 파일을 모두 삭제하고, *.txt 확장자와 같이 작업 중 생성된 일반 텍스트 파일이나 이미지 파일 등 불필요한 파일에 대하여 제거
+3. 웹 서버 설정 후 초기 페이지와 초기 디렉터리 및 배너를 삭제하여 Banner Grab에 의한 시스템 정보 유출을 차단함
+4. 아래 개인정보 마스킹 기준 예시를 참고하여 개인정보 항목의 일부를 마스킹해야 함
+5. 개발 중 작성된 주석 문자, 디버그 정보, 시스템 구조 관련 정보 등이 외부에 노출되지 않게 제거
+```
+
+| 삭제 권고 확장자 예시 |
+| :--- |
+| *.bak *.backup *.org *.old *.zip *.log *.sql *.new *.txt *.tmp *.temp *.!\ |
+
+| 개인정보 | 설명 | 예시 |
+| :--- | :--- | :--- |
+| 성명 | 성명 중 한 글자 이상 | 홍*동 |
+| 주민등록번호 | 뒤에서부터 6자리 | 901231-1****** |
+| 여권번호 | 뒤에서부터 4자리 | 12345**** |
+| 연락처 | 전화번호 또는 휴대폰 뒤 4자리 | 010-1234-**** |
+| 카드번호 | 7번째에서 12번째자리 | 9430-82**-****-2393 |
+| 계좌번호 | 뒤에서부터 5자리 | 430-20-1***** |
+
+---
+
+## 6. 크로스사이트 스크립트
+
+### XS (상) 크로스사이트 스크립트
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 웹 애플리케이션 내 악성 스크립트가 다른 사용자의 브라우저에서 실행되는 취약점 존재 여부 점검 |
+| 점검 목적 | 사용자 입력값에 대한 검증을 실시하여, 사용자 세션 탈취, 악성 코드 삽입 등의 악의적인 스크립트 실행을 차단하기 위함 |
+| 보안 위험 | 사용자 입력값에 대한 필터링이 할 경우, 공격자는 사용자 입력값 내 악의적인 스크립트(JavaScript, VBScript, ActiveX, Flash 등)를 삽입하여 사용자의 쿠키(세션)를 탈취하거나 피싱 사이트로 유도하는 등의 악의적인 공격을 수행할 수 있음 |
+| 참고 | ※ 크로스사이트 스크립팅: 악의적인 스크립트를 웹 페이지에 삽입하여 사용자 세션 탈취, 키로깅, 피싱 공격 등을 유발하는 기법으로, 크게 저장형(Stored)과 반사형(Reflected), DOM 기반 공격 방식으로 나뉨<br>※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 소스코드, 웹 방화벽 |
+| 판단 기준 | **양호**: 사용자 입력값에 대해 검증 및 필터링이 이루어져, 악의적인 스크립트가 실행되지 않는 경우<br>**취약**: 사용자 입력값에 대한 검증 및 필터링이 이루어지지 않으며, HTML 코드가 입력 및 실행되는 경우 |
+| 조치 방법 | 특수문자에 대해 필터링 처리와 출력값 인코딩(HTML 엔티티, 이스케이프 등)을 적용하여 악성 스크립트 실행을 방지하며, 부득이하게 HTML 코드를 사용해야 하는 경우 화이트리스트 방식을 적용해 허용된 HTML 코드만 처리하도록 설정 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+```
+- 점검 방법
+Step 1) 사용자 입력값을 전달받아 HTML 상에 렌더링되는 애플리케이션(게시판, 검색 등)에 스크립트 구문 삽입 후 실행되는지 확인
+§ 게시글 작성 시 스크립트 구문을 삽입하여 글 열람 시 스크립트가 동작하는 경우(Stored XSS)
+[ Stored(저장형) XSS 취약점 점검 ]
+§ 입력값이 HTML 상에 렌더링되어 스크립트가 삽입된 URL 접근 시 스크립트가 동작하는 경우(Reflected XSS)
+[ Reflected(반사형) XSS 취약점 점검 ]
+```
+
+```
+- 조치 방법
+1. 크로스사이트 스크립팅 공격에 사용되는 특수문자에 대하여 입력값 검증 및 필터링(HTML 엔티티, 이스케이프 등)처리 로직을 서버 사이드에서 구현
+2. 부득이하게 HTML 코드를 사용해야 하는 경우 화이트리스트 방식을 적용하여 허용된 HTML 코드만 처리
+3. 웹 방화벽에서 웹 태그 및 스크립트 관련 특수문자 필터링 룰셋을 적용하여 추가적인 방어 확보
+4. 세션 탈취 방지를 위해 쿠키에 HttpOnly, Secure, SameSite 옵션을 설정하여 노출되지 않도록 보호
+```
+
+| 구분 | 필터링 예시 |
+| :--- | :--- |
+| 변경 전 | < > " ( ) # & |
+| 변경 후 | &lt; &gt; &quot; &#40; &#41; &#35; &amp; |
+
+**※ Java**
+
+```
+§ 입력 문자열 내 특수 문자를 HTML Entity로 변환하는 예시
+사용자 입력값 HTML Entity 처리 로직 예시
+...
+public static String sanitizeInput(String input) {
+ if (input == null) return null;
+ return input.replaceAll("&", "&amp;")
+ .replaceAll("<", "&lt;")
+ .replaceAll(">", "&gt;")
+ .replaceAll("\"", "&quot;")
+ .replaceAll("'", "&#39;");
+ /* 필터링 문자 추가*/
+}
+...
+```
+
+**※ ASP.NET**
+
+```
+§ 입력 문자열 내 특수 문자를 HTML Entity로 변환하는 예시
+사용자 입력값 HTML Entity 처리 로직 예시
+StringBuilder sb = new StringBuilder();
+foreach (char c in input)
+{
+ switch (c)
+ {
+ case '<':
+ sb.Append("&lt;");
+ break;
+ ...
+ /* 필터링 문자 추가*/
+ ...
+ default:
+ sb.Append(c);
+ break;
+ }
+}
+return sb.ToString();
+...
+```
+
+**※ PHP**
+
+```
+§ 입력 문자열 내 특수 문자를 HTML Entity로 변환하는 예시
+사용자 입력값 HTML Entity 처리 로직 예시
+function escapeHtml($input) {
+ return htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
+}
+// 추가적인 문자열 필터링이 필요한 경우
+function escapeHtmlExtended($input) {
+ $escaped = htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
+ $additionalEscapes = [
+ '\\' => '&#92;',
+ '(' => '&#40;',
+ ')' => '&#41;',
+ '#' => '&#35;'
+ ];
+ return strtr($escaped, $additionalEscapes);
+}
+```
+
+---
+
+## 7. 크로스사이트 요청 위조(CSRF)
+
+### CF (상) 크로스사이트 요청 위조(CSRF)
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 웹 애플리케이션 내 사용자의 인증 세션을 악용하여 의도하지 않은 위조 요청 가능 여부 점검 |
+| 점검 목적 | 사용자가 인증된 세션을 가진 상태에서 공격자가 의도한 위조 요청이 전송‧처리되지 않도록 하여 비정상적인 상태 변경을 방지하기 위함 |
+| 보안 위험 | CSRF 취약점이 존재할 경우, 공격자는 사용자가 로그인된 세션을 악용하여 인증정보 없이도 위조된 요청을 전송할 수 있음. 이로 인해 사용자의 의도와 무관하게 비밀번호 변경, 계좌 이체, 게시글 삭제, 개인정보 수정 등 권한 있는 사용자가 수행할 수 있는 행위가 공격자에 의해 실행될 수 있음 |
+| 참고 | ※ CSRF(Cross Site Request Forgery): 사용자가 자신의 의지와 무관하게 공격자가 의도한 행위(수정, 삭제, 등록 등)를 특정 웹사이트에 요청하게 하는 공격 유형으로, 사용자의 인증된 세션을 악용하여 비인가된 행위 수행 가능<br>※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 소스코드, 웹 방화벽 |
+| 판단 기준 | **양호**: 중요한 요청(비밀번호 변경, 송금 등)에 대해 CSRF 방어 토큰이 적용되어 있으며, 토큰 검증이 정상적으로 수행되는 경우<br>**취약**: 중요한 요청에 대해 CSRF 토큰이 없거나, 토큰 검증을 수행하지 않아 인증된 사용자의 요청 위조가 가능한 경우 |
+| 조치 방법 | 중요한 요청에는 CSRF 방어 토큰을 포함하고, 서버 측에서 해당 토큰의 유효성을 검증하도록 설정하며, Referer/Origin 헤더 검증 및 SameSite 쿠키 옵션을 활용하여 불필요한 외부 도메인 요청이 차단되도록 구성 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+```
+Step 1) 크로스사이트 스크립팅(XSS) 취약점 존재 여부 확인 후 데이터 수정 기능(게시글 등록, 비밀번호 변경 등)이 존재하는 요청(Request) 정보를 분석하여 임의의 명령을 수행하는 스크립트 삽입 후 해당 게시글을 타 사용자가 열람하였을 경우 타 사용자의 권한으로 해당 스크립트의 실행 유무 확인
+[ CSRF 취약점 점검 ]
+```
+
+```
+- 조치 방법
+1. 주요 변경 요청(비밀번호 변경, 송금, 개인정보 수정 등)에 대해 CSRF 토큰을 발급하고 요청 시 토큰을 반드시 포함하도록 구현
+2. 서버 측에서 CSRF 토큰의 유효성을 검증하여 토큰이 누락되거나 위조된 요청은 차단하도록 설정
+3. Referer 및 Origin 헤더 검증을 통해 외부 사이트에서 발생한 요청 차단
+4. SameSite 쿠키 옵션을 적용하여 외부 사이트에서 인증 쿠키가 자동 전송되지 않도록 설정
+5. HTTPS 환경에서 쿠키에 Secure, HttpOnly 속성을 적용하여 세션 탈취 및 악용 가능성 최소화
+```
+
+**※ CSRF Token**
+
+```
+§ CSRF Token은 서버에서 생성한 고유하고 예측 불가능한 값으로 각 사용자 세션 또는 요청마다 생성되며 생성된 Token은 클라이언트의 요청에 포함되어 서버로 전송되고 서버는 이를 검증하여 요청의 정상 여부 판단
+CSRF Token 생성 예시
+// Java
+...
+// CSRF Token 생성 및 세션 저장
+public String index(Model model, HttpServletRequest request) {
+ HttpSession session = request.getSession();
+ String csrfToken = generateCsrfToken();
+ session.setAttribute("csrfToken", csrfToken);
+ model.addAttribute("csrfToken", csrfToken);
+ model.addAttribute("inputs", inputs);
+ return "index";
+}
+// CSRF Token 생성 함수
+private String generateCsrfToken() {
+ SecureRandom secureRandom = new SecureRandom();
+ byte[] token = new byte[16];
+ secureRandom.nextBytes(token);
+ return Base64.getUrlEncoder().encodeToString(token);
+}
+// CSRF Token 검증
+@PostMapping("/submit")
+public String submit(@RequestParam("input") String input,
+ @RequestParam("csrfToken") String csrfToken,
+ HttpServletRequest request,
+ Model model) {
+ HttpSession session = request.getSession();
+ String sessionToken = (String) session.getAttribute("csrfToken");
+ if (sessionToken == null || !sessionToken.equals(csrfToken)) {
+ throw new IllegalStateException("Invalid CSRF token");
+ }
+ String sanitizedInput = sanitizeInput(input);
+ inputs.add(sanitizedInput);
+ model.addAttribute("inputs", inputs);
+ return "index";
+ }
+// index.html
+<form action="/submit" method="post">
+ <input type="hidden" name="csrfToken" th:value="${csrfToken}" />
+ <label for="input">Enter text:</label>
+ <input type="text" id="input" name="input">
+ <button type="submit">Add</button>
+</form>
+...
+```
+
+---
+
+## 8. 서버사이드 요청 위조(SSRF)
+
+### SF (상) 서버사이드 요청 위조(SSRF)
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 입력값을 통해 외부에서 직접적인 접근이 제한된 내부 서버 자원에 접근하여 악의적인 요청을 처리하거나 중요 정보의 유출 여부 점검 |
+| 점검 목적 | 입력값 검증을 통해 내부 서버 자원에 대한 비인가 접근을 차단하여 중요 정보(개인정보, 금융 정보 등) 탈취, 데이터 변조, 임의 명령 실행 등 악의적인 행위를 방지하기 위함 |
+| 보안 위험 | 서버 간 통신 시 입력값에 대한 검증이 미흡할 경우, 외부에서 접근이 제한된 내부 서버 자원에 대한 정보 수집, 중요 정보(개인정보, 금융 정보, 인사 정보 등) 탈취, 임의 명령 실행, 클라우드 환경 내 메타데이터 수집을 통한 네트워크 인프라 장악이 가능함 |
+| 참고 | ※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 소스코드, 웹 애플리케이션 서버, 웹 방화벽, API 서버 |
+| 판단 기준 | **양호**: 외부 입력값이 화이트리스트 방식으로 검증되어, 허용된 URL 또는 IP 범위 내에서만 처리될 경우<br>**취약**: 외부 입력값이 검증이 이루어지지 않고 처리되어 허용되지 않는 자원에 임의적인 접근 및 요청이 가능한 경우 |
+| 조치 방법 | 입력값 검증 및 화이트리스트를 적용하여 허용된 URL과 IP주소만 접근 가능하도록 설정하며, 네트워크를 분리하여 내부 자원에 대한 비인가 접근을 차단 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+```
+- 점검 방법
+Step 1) 사용자 입력을 통해 서버 간 통신이 이루어지는 지점에서 허용되지 않은 주소값을 입력하여 응답, 지연 시간 등을 분석해 취약점 가능성 확인
+[ 서버 간 통신 유무 확인 ]
+[ 입력값에 대한 내부 서버 응답값 노출 여부 확인 ]
+
+Step 2) 습득한 정보를 바탕으로 우회 기법, 포트 스캔, 내부 정보 탈취 등 익스플로잇 시도 및 영향 평가
+[ 심화 공격 수행 ]
+```
+
+```
+- 조치 방법
+1. 외부 요청에 대해 허용된 URL이나 IP주소를 화이트리스트로 정의하여 허용된 대상에만 접근이 가능하도록 설정
+2. 내부 네트워크 대역 및 관리용 포트에 대한 요청을 감지하고 차단
+3. URL 접근에 실패할 경우 사용자에게 에러 정보나 응답값을 노출하지 않고, 일반적인 에러메시지 출력
+4. http, https 외의 다른 프로토콜 (FTP, SMB, SMTP 등)과 URL 스키마(file://, gopher://, data://, dict:// 등)에 대한 접근을 차단해야 하며, 내부 호스트명이 외부에 노출되지 않도록 DNS 설정을 조정
+5. 애플리케이션 서버와 중요 내부 시스템간 네트워크 분리를 통하여 불필요한 통신을 제한하여 권한 없는 접근과 외부로부터의 직접적인 접근을 방지
+```
+
+**※ Java**
+
+```
+화이트 리스트 방식을 이용한 URL 및 IP주소 접근 제한 로직 예시
+...
+private final List<String> allowedDomains = Arrays.asList("example.com", ...);
+private final Map<String, List<Integer>> allowedIPsAndPorts = new HashMap<>();
+public UrlValidator() {
+ allowedIPsAndPorts.put("192.168.1.100", Arrays.asList(80, 443, 8080));
+ allowedIPsAndPorts.put("10.0.0.1", Arrays.asList(80, 443));
+}
+...
+public boolean isUrlAllowed(String urlString) {
+ try {
+ URL url = new URL(urlString);
+ String protocol = url.getProtocol();
+
+ // HTTP와 HTTPS 스키마만 허용
+ if (!("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol))) {
+ return false;
+ }
+ String host = url.getHost();
+ int port = url.getPort() == -1 ? url.getDefaultPort() : url.getPort();
+ if (allowedDomains.contains(host)) {
+ return true;
+ }
+ if (allowedIPsAndPorts.containsKey(host)) {
+ return allowedIPsAndPorts.get(host).contains(port);
+ }
+ return false;
+ } catch (Exception e) {
+ return false;
+ }
+}
+...
+```
+
+**※ ASP.NET**
+
+```
+화이트 리스트 방식을 이용한 URL 및 IP주소 접근 제한 로직 예시
+...
+private readonly List<string> _allowedDomains = new List<string> { "example.com", ... };
+private readonly Dictionary<string, List<int>> _allowedIPsAndPorts = new Dictionary<string, List<int>>
+{
+ { "127.0.0.1", new List<int> { 80, 443, 8000 } },
+ { "10.0.0.1", new List<int> { 80, 443 } }
+};
+public bool IsUrlAllowed(string urlString)
+{
+ if (!Uri.TryCreate(urlString, UriKind.Absolute, out Uri uri))
+ {
+ return false;
+ }
+ // HTTP와 HTTPS 스키마만 허용
+ if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+ {
+ return false;
+ }
+ string host = uri.Host;
+ int port = uri.Port;
+ // 도메인 확인
+ if (_allowedDomains.Contains(host))
+ {
+ return true;
+ }
+ // IP주소와 포트 확인
+ if (_allowedIPsAndPorts.TryGetValue(host, out List<int> allowedPorts))
+ {
+ return allowedPorts.Contains(port);
+ }
+ return false;
+}
+...
+```
+
+**※ PHP**
+
+```
+화이트 리스트 방식을 이용한 URL 및 IP주소 접근 제한 로직 예시
+...
+function isUrlAllowed($url) {
+ $allowedDomains = ['example.com', 'api.example.com'];
+ $allowedIPsAndPorts = [
+ '192.168.10.10' => [80, 443, 8000],
+ '10.0.0.1' => [80, 443]
+ ];
+ $parsedUrl = parse_url($url);
+ if (!$parsedUrl || !isset($parsedUrl['host'])) {
+ return false;
+ }
+ $host = $parsedUrl['host'];
+ $port = isset($parsedUrl['port']) ? $parsedUrl['port'] : ($parsedUrl['scheme'] === 'https' ? 443 : 80);
+ // 도메인 확인
+ if (in_array($host, $allowedDomains, true)) {
+ return true;
+ }
+ // IP주소와 포트 확인
+ if (filter_var($host, FILTER_VALIDATE_IP)) {
+ if (array_key_exists($host, $allowedIPsAndPorts)) {
+ return in_array($port, $allowedIPsAndPorts[$host], true);
+ }
+ }
+ return false;
+}
+...
+```
+
+```
+§ php.ini 파일 내 allow_url_fopen 속성 활성화 시 file_get_contents() 함수를 이용하여 원격 URL에 대하여 접근 및 검색이 가능. 해당 속성을 비활성화하여 원격 URL을 참조할 수 없도록 제한하며 대안으로 cURL 라이브러리 사용
+cURL 라이브러리 사용 예시
+...
+function fetchUrl($url) {
+ // cURL 세션 초기화
+ $ch = curl_init();
+ // cURL 옵션 설정
+ curl_setopt_array($ch, [
+ CURLOPT_URL => $url,
+ CURLOPT_RETURNTRANSFER => false, // 결과를 문자열로 반환
+ CURLOPT_FOLLOWLOCATION => false, // 리다이렉트 제한(기본값: false)
+ CURLOPT_MAXREDIRS => 3, // 최대 리다이렉트 횟수 지정
+ CURLOPT_TIMEOUT => 30, // 세션의 최대 허용 시간 지정 (초)
+
+ // 접근 가능한 프로토콜을 http, https로 제한
+ CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+ CURLOPT_SSL_VERIFYPEER => true, // SSL 인증서 검증
+ ]);
+ // cURL 실행 및 결과 저장
+ $response = curl_exec($ch);
+ $error = curl_error($ch);
+ $info = curl_getinfo($ch);
+ // cURL 세션 종료
+ curl_close($ch);
+ // 결과 반환
+ return [
+ 'success' => ($error === ''),
+ 'content' => $response,
+ 'error' => $error,
+ 'info' => $info
+ ];
+}
+...
+```
+
+```
+§ allow_url_include 속성 활성화 시 원격 URL을 PHP의 include(), require() 함수를 통해서 사용 가능. 공격자가 악의적인 코드가 포함된 원격 파일을 실행할 수 있는 위험이 존재하므로 php.ini 파일 내 해당 속성 비활성화
+allow_url_include 및 allow_url_fopen 속성 비활성화
+...
+;;;;;;;;;;;;;;;;;;
+; Fopen wrappers ;
+;;;;;;;;;;;;;;;;;;
+; Whether to allow the treatment of URLs (like http:// or ftp://) as files.
+; https://php.net/allow-url-fopen
+allow_url_fopen=Off
+; Whether to allow include/require to open URLs (like https:// or ftp://) as files.
+; https://php.net/allow-url-include
+allow_url_include=Off
+...
+```
+
+---
+
+## 9. 약한 비밀번호 정책
+
+### BF (상) 약한 비밀번호 정책
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 웹 애플리케이션 내 로그인 폼 등 비밀번호를 설정하는 단계에서 약한 강도의 문자열 사용 여부를 점검하고, 비밀번호 복잡성 요구사항(최소 길이, 대문자 및 소문자, 숫자 및 특수문자 포함 등)을 준수 여부 점검 |
+| 점검 목적 | 유추 가능한 취약한 문자열(이름, 생년월일 등)이나 낮은 복잡성의 비밀번호 사용을 제한하여 계정 및 비밀번호 추측 공격을 방지하기 위함 |
+| 보안 위험 | 해당 취약점이 존재할 경우, 유추가 용이한 계정 및 비밀번호 사용으로 인해 사용자 권한 탈취 위험이 있으며, 이를 방지하기 위해 비밀번호의 적절성 및 복잡성을 검증하는 로직을 구현해야 함 |
+| 참고 | ※ 약한 비밀번호 정책 취약점: 웹 사이트에서 취약한 비밀번호로 회원가입이 가능할 경우, 공격자는 비밀번호를 추측하거나 주변 정보를 수집하여 작성한 사전 파일을 이용하여 사용자 계정의 탈취가 가능한 취약점<br>※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 소스코드 |
+| 판단 기준 | **양호**: 관리자 및 사용자 계정의 비밀번호가 유추하기 어려운 값으로 설정되어 있거나 높은 복잡성의 비밀번호 정책이 설정되어 있는 경우<br>**취약**: 관리자 및 사용자 계정의 비밀번호가 유추하기 쉬운 값으로 설정되어 있거나 낮은 복잡성의 비밀번호 정책이 설정되어 있는 경우 |
+| 조치 방법 | 높은 복잡성의 비밀번호 설정 기준을 확립하며, 계정 및 비밀번호의 체크 로직 추가 구현 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+```
+- 점검 방법
+Step 1) 웹 애플리케이션 내 추측 가능한 계정이나 비밀번호를 통하여 로그인이 가능한 계정이 존재 여부 확인
+[ 취약한 계정 정보를 통한 로그인 시도 ]
+
+Step 2) 회원가입 및 사용자 정보 수정 페이지 내 비밀번호 설정 시 높은 복잡도를 요구하는지 확인
+[ 높은 복잡도의 비밀번호 정책 설정 유무 확인 ]
+```
+
+```
+- 조치 방법
+1. 테스트 및 관리자 계정 사용 시 취약한 ID 및 비밀번호 사용을 제한
+2. 사용자가 취약한 계정이나 비밀번호를 등록하지 못하도록 비밀번호 규정이 반영된 체크 로직을 회원가입, 정보 변경, 비밀번호 변경 등 적용 필요한 페이지에 모두 구현(아래의 예시와 같이 정규 표현식을 통해 비밀번호 복잡도 검증 로직을 구현)
+3. KISA 지식플랫폼 → 법령·가이드라인 → 안내서에서 비밀번호 선택 및 이용 안내서를 통해 안전하게 비밀번호를 생성하고 관리하는 방법 참고
+(https://www.kisa.or.kr/2060305/form?postSeq=14)
+```
+
+| 구분 | 예시 |
+| :--- | :--- |
+| 취약한 ID | admin, administrator, manager, guest, tomcat, root, user, operator, anonymous 등 |
+| 취약한 비밀번호 | abcd, 1234, 1111, test, password, public, blank 비밀번호, ID와 동일한 비밀번호 등 |
+
+| 규정 예시 |
+| :--- |
+| Step 1) 다음 각 목의 문자 종류 중 2종류 이상을 조합하여 최소 10자리 이상 또는 3종류 이상을 조합하여 최소 8자리 이상의 길이로 구성<br>(1) 영문 대문자(26개)<br>(2) 영문 소문자(26개)<br>(3) 숫자(10개)<br>(4) 특수문자(32개)<br>Step 2) 연속적인 숫자나 생일, 전화번호 등 추측하기 쉬운 개인정보 및 아이디와 비슷한 비밀번호는 사용하지 않는 것을 권고<br>Step 3) 비밀번호에 유효기간을 설정하여 반기별 1회 이상 변경<br>Step 4) 최근 사용되었던 비밀번호 재사용 금지 |
+
+**※ Javascript**
+
+```
+비밀번호 복잡성 검증 예시
+function isPasswordStrong(password) {
+ const minLength = 8;
+ const hasUpperCase = /[A-Z]/.test(password);
+ const hasLowerCase = /[a-z]/.test(password);
+ const hasNumber = /[0-9]/.test(password);
+ const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+ return password.length >= minLength && hasUpperCase && hasLowerCase && hasNumber &&
+hasSpecialChar;
+}document.getElementById('password').addEventListener('input', function() {
+ const password = this.value;
+ const strengthMessage = isPasswordStrong(password) ? 'Strong' : 'Weak';
+ document.getElementById('strengthText').textContent = `Strength: ${strengthMessage}`;
+});
+4. 약한 비밀번호 정책을 사용하고, 비밀번호 입력 실패 횟수 제한 설정 또한 미흡한 경우 사전대입 공격 및 무차별 대입 공격을 통한 계정 탈취가 가능하므로 일정 횟수(3~5회) 이상 초과할 경우 계정이 잠기도록 서버 사이드 스크립트(PHP, ASP, JSP 등)를 통하여 임계 로직 구현 권고
+```
+
+---
+
+## 10. 불충분한 인증 절차
+
+### IA (상) 불충분한 인증 절차
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 중요 페이지 접근 시 추가 인증 절차 존재 여부 및 인증 로직 우회 여부 점검 |
+| 점검 목적 | 중요 페이지 접근 시 추가 인증 절차를 도입하고, 서버 사이드에서 인증 여부를 검증하여 불필요한 정보 노출 및 변조를 차단하기 위함 |
+| 보안 위험 | 중요 페이지 및 인증 로직(개인정보 수정, 본인인증, OTP 인증 등)에 대한 인증 절차가 미흡할 경우 무단 접근으로 인해 중요 정보가 유출되거나 변조될 가능성이 있으므로, 해당 구간에는 추가적인 인증 절차를 서버 사이드 방식으로 구현 및 검증 |
+| 참고 | ※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 소스코드 |
+| 판단 기준 | **양호**: 중요 정보 페이지 접근 시 추가 인증 절차가 존재하며, 인증 로직이 서버 사이드에서 구현되어 우회가 불가능한 경우<br>**취약**: 중요 정보 페이지 접근 시 추가 인증 절차가 존재하지 않거나, 인증 로직 우회가 가능하여 비인가자가 접근 가능할 경우 |
+| 조치 방법 | 중요 페이지에 대한 추가 인증 절차를 도입하고, 서버 사이드에서 인증 여부를 검증하는 로직 구현 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+```
+- 점검 방법
+Step 1) 중요 정보(개인정보 변경 등) 페이지 접근 시 재인증 절차 존재 여부 확인
+[ 2차 인증 유무 확인 ]
+
+Step 2) 로직 변조, 파라미터 변조 등의 행위를 통하여 인증 로직(OTP 인증, 휴대폰 본인인증 등)의 우회 여부 확인
+[ 인증 로직 우회 여부 확인 ]
+```
+
+```
+- 조치 방법
+1. 중요 정보를 다루는 페이지에 접근 시 본인인증을 재확인하는 로직을 구현하고, 사용자 승인 여부를 페이지마다 검증
+2. 인증 과정을 처리하는 로직 구현 시 클라이언트 사이드 방식으로 구현할 경우 사용자가 임의로 인증 과정에 대한 우회가 가능하므로 서버 사이드 방식을 이용하여 구현
+3. 접근 통제 코드는 구조화되고 모듈화되어야 하며, 모든 페이지에 로그인 및 권한 체크 기능을 구현하고 공통 모듈 사용 권장
+```
+
+```
+§ 재인증 로직 구현: 중요 정보(개인정보 변경 등)를 표시하거나 수정하는 페이지에 접근 시 사용자가 최근에 본인인증을 수행했는지 확인하는 로직을 구현하며, 사용자가 페이지에 접근할 때마다 세션을 통해 인증된 사용자임을 검증
+재인증 로직 구현 예시
+...
+public String editProfile(HttpSession session, Model model) {
+ User user = (User) session.getAttribute("user");
+ Boolean isVerified = (Boolean) session.getAttribute("isVerified"); // 세션을 통해 인증 유무 검증
+ if (user == null || isVerified == null || !isVerified) {
+ return "redirect:/user/authenticate";
+ }
+ model.addAttribute("user", user);
+ return "edit_profile";
+}
+...
+@PostMapping("/verify_code")
+public String verifyCode(@RequestParam String code, HttpSession session) {
+ if (input.equals(code)) {
+ session.setAttribute("isVerified", true);
+ return "redirect:/user/edit_profile";
+ } else {
+ return "redirect:/user/authenticate?error=true";
+ }
+}
+...
+§ 접근 제어 로직을 별도의 클래스로 분리 및 관리하여 접근 통제 로직을 공통 모듈로 구현하여 코드의 일관성 유지
+접근 통제 공통 모듈 예시
+...
+public class AccessControl {
+ public static boolean isAuthenticated(HttpSession session) {
+ return session.getAttribute("user") != null;
+ }
+ public static boolean isVerified(HttpSession session) {
+ return Boolean.TRUE.equals(session.getAttribute("isVerified"));
+ }
+}
+...
+§ 서버 사이드 스크립트 사용: 인증과정을 처리할 때 클라이언트 사이드 스크립트(Javascript 등)를 사용하지 않고, 서버 사이드 스크립트(PHP, Java, ASP.NET 등)를 사용하여 인증 및 필터링 과정을 수행하며, 모든 인증 및 권한 검증 로직은 서버 사이드에서 수행함으로써 클라이언트 측에서는 단순히 UI 제공 및 요청 전송 역할만 담당하도록 유도
+서버 사이드 인증 모듈 예시
+@PostMapping("/login")
+public String login(@RequestParam String username,
+@RequestParam String password,
+HttpSession session,
+Model model) {
+ User user = userService.findByUsername(username);
+ if (user != null && user.getPassword().equals(password)) {
+ session.setAttribute("user", user);
+ session.setAttribute("isVerified", false); // 인증 세션 초기값 설정
+ return "redirect:/user/dashboard";
+ } else {
+ model.addAttribute("error", "Invalid username or password");
+ return "login";
+ }
+}
+```
+
+---
+
+## 11. 불충분한 권한 검증
+
+### IN (상) 불충분한 권한 검증
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 타 사용자의 권한을 탈취하여 민감한 데이터 접근 및 수정 가능 여부 점검 |
+| 점검 목적 | 사용자 검증 로직을 서버 사이드에서 구현하여 비인가자로부터 악의적인 접근을 차단하기 위함 |
+| 보안 위험 | 패킷 변조, 클라이언트 측 로직 변조 등을 포함한 사용자 식별이 가능한 시퀀스 등의 데이터 변조를 통해 타 사용자의 권한을 탈취할 경우, 개인정보 유출 및 데이터 조작이 가능하므로 서버 사이드에서 권한 검증 로직을 구현해야 함 |
+| 참고 | ※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 소스코드 |
+| 판단 기준 | **양호**: 중요 페이지에 사용자 검증 로직이 구현되어 있어, 타 사용자의 권한 탈취가 제한된 경우<br>**취약**: 중요 페이지에 사용자 검증 로직이 미흡하여, 타 사용자의 권한 탈취가 가능한 경우 |
+| 조치 방법 | 접근 제어가 필요한 모든 페이지에 서버 사이드 방식 사용자 권한 검증 로직 구현 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+```
+- 점검 방법
+Step 1) 타 사용자 접근이 제한된 페이지(비밀 게시글, 개인정보 변경 등)에서 사용되는 URL 구조와 파라미터를 분석하여 사용자 간 구분을 ID, 숫자, 일련번호 등 단순한 값의 사용 여부 확인
+[ 타 사용자 권한 탈취 시도 ]
+
+Step 2) 식별된 URL 구조와 파라미터를 변조하여 타 사용자의 비공개 정보나 권한 외 리소스에 대한 접근 가능 여부 확인
+[ 타 사용자 권한 탈취 유무 확인 ]
+```
+
+```
+- 조치 방법
+1. 세션을 이용한 사용자 검증 로직을 서버 측에 구현하여, 인가된 사용자만 중요 페이지에 접근할 수 있도록 구현
+2. 각 페이지의 접근 권한을 정의하는 권한 매트릭스를 작성하고, 모든 페이지에 대해 해당 매트릭스를 참조하여 서버 사이드에서 권한 체크를 일관되게 수행
+서버 사이드 세션 검증 예시
+@GetMapping("/inquiry/{id}")
+public String viewInquiry(@PathVariable Long id, Model model, HttpSession session) {
+ User currentUser = (User) session.getAttribute("currentUser"); // 세션에서 현재 사용자 정보를 가져옴
+// 세션에 사용자 정보가 없으면 로그인되지 않은 상태이므로 401 Unauthorized 응답
+if (currentUser == null) {
+ throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not logged in");
+ }
+ Inquiry inquiry = inquiryService.findInquiryById(id); // ID에 해당하는 문의를 데이터베이스에서 가져옴
+// 현재 사용자가 문의의 작성자가 아니면 403 Forbidden 응답을 보냄
+ if (!inquiry.getUser().getUsername().equals(currentUser.getUsername())) {
+ throw new ResponseStatusException(HttpStatus.FORBIDDEN, "permission denied");
+ }
+}
+...
+```
+
+---
+
+## 12. 취약한 비밀번호 복구 절차
+
+### PR (상) 취약한 비밀번호 복구 절차
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 비밀번호 복구 기능 사용 시, 단순 정보(이름, 사번, 아이디 등)만을 활용하거나 SMS나 이메일 인증 시 발급되는 임시 비밀번호가 동일하거나 유추 가능 여부 점검 |
+| 점검 목적 | 비밀번호 복구 로직을 유추하기 어렵게 구현하고, 인증된 사용자 메일이나 SMS에서만 복구 비밀번호를 확인할 수 있도록 하여 비인가자가 사용자 비밀번호를 획득 및 변경하지 못하도록 방지하기 위함 |
+| 보안 위험 | 취약한 비밀번호 복구 로직(비밀번호 찾기 등)으로 인하여 공격자가 불법적으로 다른 사용자의 비밀번호를 획득, 변경할 수 있음 |
+| 참고 | ※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 소스코드 |
+| 판단 기준 | **양호**: 비밀번호 재설정 시 난수를 이용하여, 인증된 사용자 메일이나 SMS로 임시 비밀번호 또는 비밀번호 재설정을 위한 링크가 전송될 경우<br>**취약**: 비밀번호 재설정 시 일정 패턴으로 재설정되고 웹 사이트 화면에 바로 출력될 경우 |
+| 조치 방법 | 비밀번호 복구 로직을 강화하고, 인증된 사용자 메일이나 SMS에서만 재설정된 비밀번호를 확인할 수 있도록 하여 비인가자가 비밀번호를 획득하지 못하도록 조치 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+```
+- 점검 방법
+Step 1) 비밀번호 복구 기능 유무를 파악하고, 복구 과정에서 보안 질문이 추측 가능하거나 소셜 엔지니어링으로 쉽게 답을 찾을 수 있는 단순 정보를 요구하는지 확인
+[ 비밀번호 복구 시 보안 질문 단순성 확인 ]
+
+Step 2) 비밀번호 복구 시 재설정된 비밀번호에 대하여 추측가능한 일정 패턴으로 발급 유무 확인
+[ 발급 비밀번호에 대한 복잡성 판단 ]
+
+Step 3) 비밀번호 복구 과정에서 해당 계정에 등록된 이메일 및 전화번호가 아닌 공격자의 정보로 변조가 가능한 포인트의 점검 및 패킷 변조를 통해 공격자 측으로 인증 번호 및 임시 비밀번호 발급 여부 확인
+[ 비밀번호 초기화 시 사용자 정보에 대한 무결성 검증 ]
+```
+
+```
+- 조치 방법
+1. 추측이 어렵고 공개적으로 알 수 없는 정보를 기반으로 한 보안 질문 사용
+2. 비밀번호 재설정 과정에서 사용자의 메일이나 SMS로 인증 코드 전송 후 이를 확인하는 2단계 인증 도입
+3. 사용자의 개인정보(연락처, 주소, 메일 주소 등)로 비밀번호의 생성을 제한하며, 불규칙적이고 최소 길이(6자 이상 권고) 이상의 복잡도를 만족하는 비밀번호를 발급 및 웹 사이트 화면에 바로 출력하지 않고 인증된 사용자의 메일이나 SMS로 전송되게 구현
+4. 비밀번호 재발급 검증 실패에 대한 임계값을 설정하여 일정 횟수 이상 실패한 경우 다른 방식으로 비밀번호 찾기 기능을 제공하고, 검증 후 기존의 비밀번호가 아닌 임시 비밀번호를 발급하도록 설계하며, 사용자가 임시 비밀번호를 재사용하지 못하도록 발급받은 즉시 새로운 비밀번호로 재설정하도록 구현
+```
+
+**※ Java**
+
+```
+§ SecureRandom : 난수를 생성하는 데 사용되는 클래스로, 일반 Random 클래스와 달리 시드를 명시적으로 설정할 수 없으므로 키 생성, 보안 토큰 등 보안이 필요한 애플리케이션의 경우 SecureRandom 사용
+SecureRandom 클래스를 사용하여 안전한 임시 비밀번호를 생성하는 예시
+private static final String CHARACTERS =
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+//대소문자 영문, 숫자 조합으로 12자리의 난수 생성 규칙 정의
+private static final int PASSWORD_LENGTH = 12;
+ private String generateTemporaryPassword() {
+ SecureRandom secureRandom = new SecureRandom();
+ StringBuilder password = new StringBuilder(PASSWORD_LENGTH);
+ for (int i = 0; i < PASSWORD_LENGTH; i++) {
+ int randomIndex = secureRandom.nextInt(CHARACTERS.length());
+ password.append(CHARACTERS.charAt(randomIndex));
+ }
+ return password.toString()
+ } //임시 비밀번호로 사용될 난수 생성
+```
+
+**※ ASP.NET**
+
+```
+§ RNGCryptoServiceProvider : 난수를 생성하는 데 사용되는 클래스로, 사전에 정의된 문자 집합에서 안전한 암호화 알고리즘을 기반으로 문자를 선택하여 복잡한 난수를 생성
+RNGCryptoServiceProvider 클래스를 사용하여 안전한 임시 비밀번호를 생성하는 예시
+protected void btnCheckRandom_Click(object sender, EventArgs e) {
+ lblRandomNumber.Text = GenerateAlphanumericRandom(12); // 자리수 정의(12)
+ }
+ private string GenerateAlphanumericRandom(int length) {
+ const string chars =
+ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+ //대소문자 영문, 숫자 조합으로 생성 규칙 정의
+ StringBuilder result = new StringBuilder(length);
+ byte[] randomBytes = new byte[4 * length];
+ using (var rng = new RNGCryptoServiceProvider())
+ {
+ rng.GetBytes(randomBytes);
+ for (int i = 0; i < length; i++)
+ {
+ uint randomInt = BitConverter.ToUInt32(randomBytes, i * 4);
+ result.Append(chars[(int)(randomInt % (uint)chars.Length)]);
+ }
+ }
+ return result.ToString();
+}
+```
+
+**※ PHP**
+
+```
+§ rand 메소드 보다 random_int 메소드가 암호학적으로 안전한 난수를 생성 (PHP 7.0 버전부터 사용 가능)
+random_int() 메소드를 사용하여 안전한 임시 비밀번호를 생성하는 예시
+...
+function generateRandomPassword($length = 12) {
+ $characters =
+'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()';
+ $charactersLength = strlen($characters);
+ $randomPassword = '';
+ for ($i = 0; $i < $length; $i++) {
+ $randomPassword .= $characters[random_int(0, $charactersLength - 1)];
+ }
+ return $randomPassword;
+}
+....
+if ($_SERVER['REQUEST_METHOD'] == 'POST') { //세션 정보와 'userid' 값이 일치하는지 검증
+ $userid = $_POST[‘userid’];
+ $email = $_POST[‘email’];
+
+ if (isset($_SESSION['userid']) && $_SESSION['userid'] === $userid) {
+ $temporaryPassword = generateRandomPassword();
+ updateUserPassword($userid, password_hash($temporaryPassword, PASSWORD_DEFAULT));
+ if (sendPasswordEmail($email, $temporaryPassword)) {
+ echo "귀하의 이메일로 임시 비밀번호가 발송되었습니다.";
+....
+```
+
+---
+
+## 13. 프로세스 검증 누락
+
+### PV (상) 프로세스 검증 누락
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 서비스 제공에 필요한 사용자 입력 및 실행단계의 흐름에 대한 검증의 적절성 여부 점검 |
+| 점검 목적 | 서버 사이드에서 적절한 검증을 통해 비정상적인 입력 및 프로세스 흐름으로 허용되지 않은 웹 애플리케이션 내 발생할 수 있는 논리적 오류를 차단하기 위함 |
+| 보안 위험 | 웹 애플리케이션 내 프로세스 또는 기능에 대한 접근 제어 및 검증이 미흡할 경우, 비정상적인 논리 오류를 유발하여, 중요 페이지에 대한 URL 직접 접근, 가격 변조 등의 다양한 행위가 가능하며 서비스 제공에 불이익이 발생할 수 있음 |
+| 참고 | ※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 소스코드 |
+| 판단 기준 | **양호**: 프로세스에 대한 검증이 존재하며, 악의적인 행위(URL 직접 접근, Javascript 로직 변조 등)를 통하여 논리 오류가 발생하지 않는 경우<br>**취약**: 프로세스에 대한 검증이 미흡하여, 논리 오류를 통한 의도된 기능이 왜곡되거나 보안 취약점이 노출되는 경우 |
+| 조치 방법 | 프로세스 검증이 필요한 경우 각 프로세스에 대한 체크 로직 구현 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+```
+- 점검 방법
+Step 1) 웹 사이트 내 기능들의 권한 종류 및 프로세스의 흐름을 파악하고 각 프로세스의 통제를 우회 및 악용 가능성 여부 점검(권한 상승, 민감 정보 획득, 가격 변조 등)
+§ 비 로그인 상태로 URL 직접 접근을 통해 내부 사용자 관리 페이지로 접근할 수 있는지 확인하는 예시
+[ 내부 페이지 URL 직접 접근 시도 ]
+§ 가격 정보에 대한 검증이 미흡하여, 파라미터 변조를 통해 변조된 가격으로 상품 구매 가능 여부 확인
+[ 프록시 도구를 이용한 가격 변조 시도 ]
+```
+
+```
+- 조치 방법
+1. 모든 비즈니스 로직에서 예상된 프로세스 흐름을 검토하여, 중간 단계를 생략하거나 우회할 수 없도록 플로우 제어 로직을 추가하여, 사용자가 단계별로 진행했는지 검증하도록 구현
+2. 인증이 필요한 주요 정보 페이지에 접근 요청자의 권한을 검증하는 로직을 구현하고 임의로 수정할 수 없도록 서버 사이드에서 구현된 프로세스를 사용(세션 기반 접근 통제, 토큰 기반 접근 통제, Referer 검증 등)
+```
+
+**※ Java**
+
+```
+§ 세션을 확인하여 비인가자의 접근을 통제하는 로직의 추가 예시
+세션을 통한 비인가자 접근 통제 로직
+public class SessionConfig implements WebMvcConfigurer {
+ public void addInterceptors(InterceptorRegistry registry) {
+ registry.addInterceptor(new SessionInterceptor())
+ .addPathPatterns("/home", "/board/**")
+ .excludePathPatterns("/login", "/register", "/error");
+ } //비공개 페이지와 공개용 페이지 정의
+}
+...
+public class SessionInterceptor implements HandlerInterceptor {
+ public boolean preHandle(HttpServletRequest request,
+HttpServletResponse response,
+Object handler) throws Exception {
+ if (request.getSession().getAttribute("user") == null) {
+ response.sendRedirect("/login");
+ return false;
+ } //보호된 페이지 접근 시 요청을 가로채, preHandle 메서드를 호출하여 세션을 검증
+ return true;
+...
+```
+
+**※ ASP.NET**
+
+```
+§ Page_Load : ASP.NET Web Form에서 제공하는 이벤트 핸들러. 페이지 생명주기의 일부로써, 페이지의 로드 시마다 자동으로 호출. ASP.NET 런타임은 페이지 클래스에서 Page_Load라는 이름의 메서드를 찾아 자동으로 이동하며, 페이지가 로드될 때 실행해야 하는 초기화 코드를 넣는데 주로 사용
+Page_Load 메서드를 통한 세션 검증 로직
+protected void Page_Load(object sender, EventArgs e) {
+ if (Session["UserName"] == null)
+ {
+ //세션 내 UserName 키값이 존재하지 않으면 접근권한 없음
+ Response.Redirect("~/Login.aspx");
+ }
+}
+§ 어트리뷰트 : 코드의 메타데이터를 나타내는데 사용되는 선언적 태그. 클래스, 메서드, 속성, 이벤트, 필드 등과 같은 다양한 프로그래밍 요소에 추가 정보를 제공. [Authorize] 어트리뷰트의 경우, 컨트롤러나 액션 메서드에 대한 접근을 인증된 사용자로 제한하는 기능을 담당함
+[Authorize] 어트리뷰트를 통한 특정 페이지 접근 정책 설정 예시
+//설정 파일(Program.cs) 내 사용자 정의 권한 정책 생성
+...
+builder.Services.AddAuthorization(options =>
+{ options.AddPolicy("AdminOnly", policy => policy.RequireClaim("Auth", "admin"));
+});
+...
+//로그인 컨트롤러에서 auth값 클레임 추가
+[HttpPost]
+public async Task<IActionResult> Login(string username, string password)
+{ var user = _context.Users.FirstOrDefault(u => u.Username == username);
+ if (user != null)
+ {
+ var result = _passwordHasher.VerifyHashedPassword(user, user.Password, password);
+ if (result == PasswordVerificationResult.Success)
+ {
+ var claims = new List<Claim>
+ {
+ new Claim(ClaimTypes.Name, username),
+ new Claim("FullName", user.Name),
+ new Claim("Auth", user.Auth)
+ };
+ }
+....
+//권한 제어 페이지 컨트롤러 내 [Authorize] 어트리뷰 사용
+...
+[Authorize(Policy = "AdminOnly")]
+ public class AdminController : Controller
+ {
+ public IActionResult Index()
+ {
+ return View();
+ }
+ }
+...
+```
+
+**※ PHP**
+
+```
+세션 변수 내 플로우 제어 값 설정 로직
+...
+session_start();
+if ($step_completed) {
+ $_SESSION['step1_completed'] = true;
+ header('Location: step2.php'); // 이전 단계 완료 시 2단계로 접근
+ exit;
+}
+// 2단계 직접 접근 시
+if (!isset($_SESSION['step1_completed']) || $_SESSION['step1_completed'] !== true) {
+ header('Location: step1.php'); // 1단계를 완료하지 않은 경우, 1단계 과정으로 리다이렉트
+ exit;
+}
+...
+```
+
+---
+
+## 14. 악성 파일 업로드
+
+### FU (상) 악성 파일 업로드
+
+| 구분 | 내용 |
+| :--- | :--- |
+| **개요** | |
+| 점검 내용 | 웹 애플리케이션 내 업로드 기능 이용 시 악성 파일의 업로드 및 실행 가능 여부 점검 |
+| 점검 목적 | 업로드되는 파일의 확장자에 대한 적절성을 검증하는 로직을 구현하여 악성 파일(Server Side Script, exe, dll, bat 등)의 업로드를 방지하고, 서버에 저장된 파일 경로를 유추하여 해당 파일의 실행을 제한하기 위함 |
+| 보안 위험 | 해당 취약점이 존재할 경우, 공격자는 악성 파일을 서버에 업로드 및 실행하여 시스템 관리자 권한을 획득하거나 인접 서버에 대한 침입을 시도할 수 있음 |
+| 참고 | ※ Server Side Script: 웹에서 사용되는 스크립트 언어 중 서버 측에서 실행되는 스크립트<br>※ 악성 콘텐츠: Flash 파일이나 dll, bat, exe 실행 파일 등 악성코드가 포함될 수 있는 콘텐츠<br>※ 기반시설 특성상 원칙적으로 업로드 기능을 제한해야 하나, 부득이하게 사용해야 하는 경우 특정 사용자만 허용된 확장자의 콘텐츠 파일을 업로드할 수 있도록 구현<br>※ 소스코드 및 취약점 점검 필요 |
+| **점검 대상 및 판단 기준** | |
+| 대상 | 웹 애플리케이션 소스코드, 웹 애플리케이션 서버, 웹 방화벽 |
+| 판단 기준 | **양호**: 업로드되는 파일에 대한 확장자 검증이 이루어지는 경우<br>**취약**: 업로드되는 파일에 대한 확장자 검증이 이루어지지 않고 업로드 경로 접근 시 정상적으로 실행이 가능한 경우 |
+| 조치 방법 | 업로드되는 파일에 대한 확장자 검증 및 실행 권한 제거 |
+| 조치 시 영향 | 일반적인 경우 영향 없음 |
+
+#### 점검 및 조치 사례
+
+**● 악성 콘텐츠 업로드**
+
+```
+- 점검 방법
+Step 1) 파일 업로드 기능 이용 시 파일 확장자(.exe, .bat, .sh, .dll 등) 검증 여부 확인
+[ 악성 파일 업로드 시도 ]
+
+Step 2) 임의 악성 파일에 대하여 정상적으로 업로드 가능 여부 확인
+[ 악성 파일 업로드 유무 확인 ]
+
+Step 3) 파일 다운로드 및 특정 서비스 간 실행 기능 제공 시 클라이언트/서버에 대하여 악성 코드 감염 가능성 여부 확인
+[ 악성 파일에 대한 익스플로잇 및 실행 가능성 여부 확인 ]
+```
+
+**● Server Side Script 업로드**
+
+```
+- 점검 방법
+Step 1) Server Side Script 파일 업로드 및 파일 경로 확인
+[ 업로드 된 악성 Server Side Script에 대한 경로 확인 ]
+
+Step 2) 업로드된 Server Side Script 파일 경로 접근 시 파일 실행 여부 확인
+[ 악성 Server Side Script 실행 유무 확인 ]
+```
+
+```
+- 조치 방법
+1. 업로드 파일명에 인코딩/디코딩, 널바이트, 태그 등을 제거할 수 있도록 정규화 및 필터링
+2. 업로드 파일의 확장자 및 MIME 타입에 대해 화이트리스트 방식으로 검증 로직을 구현하여 서버 사이드로 하여금 허용된 파일 유형만 업로드를 허용하며 대용량 파일 업로드 시 용량 제한 구현
+3. 업로드된 파일의 이름을 암호화 후 저장하여 파일 이름을 유추할 수 없도록 처리
+4. 업로드된 파일의 실행 권한을 제한하여 해당 파일이 서버 사이드에서 실행되지 않도록 설정
+5. 업로드 경로에 대하여 웹 디렉터리와 격리 조치
+6. 주기적으로 업로드된 파일을 대상으로 바이러스 검사 실시
+```
+
+**※ Java**
+
+```
+§ 화이트리스트 방식의 확장자 검증 및 MIME 타입 검증 로직을 구현하여 허용된 유형의 파일만 업로드 허용
+파일 업로드 보안코드 예시
+...
+private static final String[] ALLOWED_EXTENSIONS = {"jpg", "png", "pdf", "txt"};
+private static final Set<String> ALLOWED_MIME = Set.of("image/jpeg","image/png","application/pdf","text/plain");
+...
+// 파일명 정규화
+private static String normalizeFilename(String filename) {
+ if (filename == null) return null;
+ String name = java.net.URLDecoder.decode(filename, StandardCharsets.UTF_8);
+ name = Normalizer.normalize(name, Normalizer.Form.NFC);
+ name = name.replace("\0", "");
+ name = name.replaceAll("[<>:\"/\\\\|?*]", "");
+ name = name.replaceAll("^[.\\s]+|[.\\s]+$", "");
+ return name;
+ }
+// 확장자 추출 + 이중 확장자 차단
+private static String getExtension(String filename) {
+ String safe = normalizeFilename(filename);
+ int dotCount = safe.length() - safe.replace(".", "").length();
+ if (dotCount != 1) return ""; // 이중 확장자 차단
+ int idx = safe.lastIndexOf('.');
+ if (idx == -1) return "";
+ return safe.substring(idx+1).toLowerCase();
+ }
+public static String saveFile(MultipartFile file, String uploadDir) throws IOException {
+ String original = file.getOriginalFilename();
+ String ext = getExtension(original);
+ if (!ALLOWED_EXTENSIONS.contains(ext)) {
+ throw new IOException("허용되지 않은 확장자");
+ }
+// MIME 시그니처 검증
+Tika tika = new Tika();
+String mime = tika.detect(file.getInputStream());
+if (!ALLOWED_MIME.contains(mime)) {
+throw new IOException("허용되지 않은 파일 유형");
+}
+// 파일명 난수화
+String newName = UUID.randomUUID().toString().replace("-", "") + "." + ext;
+java.nio.file.Path savePath = java.nio.file.Paths.get(uploadDir, newName);
+file.transferTo(savePath.toFile());
+return newName;
+ }
+}
+...
+```
+
+**※ ASP.NET**
+
+```
+§ 화이트리스트 방식의 확장자 검증 로직을 통한 허용된 확장자 파일만 업로드
+파일 업로드 보안 코드 예시
+...
+private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".pdf", ".txt" };
+ private static readonly string[] AllowedMime = { "image/jpeg","image/png","image/gif","application/pdf","text/plain" };
+...
+// 파일명 정규화
+private static string NormalizeFilename(string filename)
+ {
+ if (string.IsNullOrWhiteSpace(filename)) return string.Empty;
+ string name = System.Web.HttpUtility.UrlDecode(filename, Encoding.UTF8);
+ name = name.Normalize(NormalizationForm.FormC);
+ name = name.Replace("\0", "");
+ name = Regex.Replace(name, "[<>:\"/\\\\|?*]", "");
+ name = Regex.Replace(name, "^[.\\s]+|[.\\s]+$", "");
+ return name;
+ }
+ // 확장자 검증 (이중 확장자 차단 포함)
+ private static bool IsValidExtension(string filename)
+ {
+ string safeName = NormalizeFilename(filename);
+ if (string.IsNullOrEmpty(safeName)) return false;
+// 이중 확장자 차단
+ if (safeName.Split('.').Length != 2) return false;
+ string ext = Path.GetExtension(safeName).ToLowerInvariant();
+ return Array.Exists(AllowedExtensions, e => e == ext);
+ }
+ protected void btnUpload_Click(object sender, EventArgs e)
+ {
+ if (FileUpload1.HasFile)
+ {
+ string safeName = NormalizeFilename(FileUpload1.FileName);
+ // 확장자 검증
+ if (!IsValidExtension(safeName))
+ {
+ Response.Write("허용되지 않은 확장자입니다.");
+ return;
+ }
+ // MIME 타입 검증 (주의: Web Forms의 ContentType은 신뢰성이 낮음)
+ string mime = FileUpload1.PostedFile.ContentType.ToLowerInvariant();
+ if (Array.IndexOf(AllowedMime, mime) < 0)
+ {
+ Response.Write("허용되지 않은 MIME 타입입니다.");
+ return;
+ }
+ // 난수화된 파일명 생성
+ string ext = Path.GetExtension(safeName).ToLowerInvariant();
+ string newName = Guid.NewGuid().ToString("N") + ext;
+ // 저장 경로 (웹 루트 외부 권장)
+ string uploadPath = Server.MapPath("~/Uploads/");
+ if (!Directory.Exists(uploadPath))
+ {
+ Directory.CreateDirectory(uploadPath);
+ }
+ string savePath = Path.Combine(uploadPath, newName);
+ try
+ {
+ FileUpload1.SaveAs(savePath);
+ Response.Write("업로드 성공: " + HttpUtility.HtmlEncode(newName));
+ }
+ catch (Exception ex)
+ {
+ Response.Write("업로드 실패: " + HttpUtility.HtmlEncode(ex.Message));
+ }
+ }
+ else
+ {
+ Response.Write("업로드할 파일을 선택하세요.");
+ }
+ }
+}
+...
+```
+
+**※ PHP**
+
+```
+§ move_uploaded_file의 경우, php.ini 파일 내 'upload_tmp_dir' 속성에 정의된 경로에 'php***.tmp' 형식의 임시 파일로 업로드되며, 유효하지 않은 파일의 경우 삭제 처리됨
+§ 화이트리스트 방식의 확장자 검증 및 MIME 타입 검증 로직을 구현하여 허용된 유형의 파일만 업로드 허용
+파일 업로드 보안 코드 예시
+// 파일명 정규화
+function normalize_filename($filename) {
+ $filename = urldecode($filename);
+ $filename = normalizer_normalize($filename, Normalizer::FORM_C);
+ $filename = str_replace("\0", "", $filename);
+ $filename = preg_replace('/[<>:"\/\\\\|?*]/', '', $filename);
+ $filename = preg_replace('/^[\.\s]+|[\.\s]+$/u', '', $filename);
+ return $filename;
+}
+// 이중 확장자 차단
+function is_valid_extension($filename, $allowed_exts) {
+ $safe = normalize_filename($filename);
+ if (substr_count($safe, '.') !== 1) return false;
+ $ext = strtolower(pathinfo($safe, PATHINFO_EXTENSION));
+ return in_array($ext, $allowed_exts, true);
+}
+// 확장자 검증
+function save_upload($file, $uploadDir) {
+ $allowed_exts = ['jpg','jpeg','png','pdf','txt'];
+ $allowed_mime = ['image/jpeg','image/png','application/pdf','text/plain'];
+ if (!is_valid_extension($file['name'], $allowed_exts)) {
+ throw new Exception("허용되지 않은 확장자");
+ }
+ // MIME 시그니처 확인
+ $mime = mime_content_type($file['tmp_name']);
+ if (!in_array($mime, $allowed_mime, true)) {
+ throw new Exception("허용되지 않은 파일 유형");
+ }
+ // 파일명 난수화
+ $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+ $newName = bin2hex(random_bytes(16)) . '.' . $ext;
+ $dest = rtrim($uploadDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $newName;
+ if (!move_uploaded_file($file['tmp_name'], $dest)) {
+ throw new Exception("파일 저장 실패");
+ }
+ return $newName;
+}
+```
+
+---
+
+*(Part 12 끝. 이상으로 Web Application 상세 항목이 완료되었습니다. 다음 Part 13에서는 파일 다운로드, 불충분한 세션 관리, 데이터 평문 전송, 쿠키 변조, 관리자 페이지 노출, 자동화 공격, 불필요한 Method 악용, 가상화 장비, 클라우드 상세 항목이 이어집니다.)*
