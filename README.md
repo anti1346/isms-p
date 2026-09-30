@@ -1,2 +1,2 @@
-# isms-p
+# ISMS-P
 ISMS-P
